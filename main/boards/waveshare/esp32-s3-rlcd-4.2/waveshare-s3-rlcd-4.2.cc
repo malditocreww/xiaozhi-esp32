@@ -11,7 +11,7 @@
 #include "wifi_station.h"
 #include "mcp_server.h"
 #include "lvgl.h"
-#include "custom_lcd_display.h"
+#include "mmwave_sensor.h"
 
 #define TAG "waveshare_rlcd_4_2"
 
@@ -23,6 +23,7 @@ private:
     adc_oneshot_unit_handle_t adc1_handle;
     adc_cali_handle_t cali_handle;
     bool vbat_status = 0;
+    MmwaveSensor* mmwave_ = nullptr;
 
     void InitializeI2c() {
         i2c_master_bus_config_t i2c_bus_cfg = {};
@@ -64,6 +65,37 @@ private:
             EnterWifiConfigMode();
             return true;
         });
+
+        mcp_server.AddTool("self.presence.get_status",
+            "Estado del sensor de presencia de la casa. Devuelve si hay alguien cerca del dispositivo "
+            "ahora, hace cuantos minutos se detecto a alguien por ultima vez y cuantos saludos "
+            "espontaneos hizo hoy. Usalo cuando te pregunten si la persona esta, o para saber si "
+            "estuvo activa.",
+            PropertyList(),
+            [this](const PropertyList&) -> ReturnValue {
+                if (mmwave_ == nullptr) {
+                    return std::string("{\"sensor\":\"no_iniciado\"}");
+                }
+                std::string json = "{\"sensor_conectado\":";
+                json += mmwave_->IsAlive() ? "true" : "false";
+                json += ",\"hay_alguien\":";
+                json += mmwave_->IsPresent() ? "true" : "false";
+                json += ",\"minutos_desde_ultima_deteccion\":" + std::to_string(mmwave_->MinutesSinceLastSeen());
+                json += ",\"saludos_hoy\":" + std::to_string(mmwave_->GreetingsToday());
+                json += "}";
+                return json;
+            });
+    }
+
+    void InitializeMmwave() {
+        MmwaveConfig cfg;
+        cfg.uart_num = MMWAVE_UART_NUM;
+        cfg.tx_pin = MMWAVE_UART_TX_PIN;
+        cfg.rx_pin = MMWAVE_UART_RX_PIN;
+        mmwave_ = new MmwaveSensor(cfg);
+        if (!mmwave_->Start()) {
+            ESP_LOGE(TAG, "El sensor mmWave no arranco; el resto sigue funcionando");
+        }
     }
 
     void InitializeLcdDisplay() {
@@ -135,6 +167,7 @@ public:
         InitializeButtons();     
         InitializeTools();
         InitializeLcdDisplay();
+        InitializeMmwave();
    }
 
     virtual AudioCodec* GetAudioCodec() override {

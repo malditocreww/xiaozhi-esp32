@@ -1,0 +1,37 @@
+name: Claudio RLCD-4.2
+
+# Compila solo el firmware de Claudio para la Waveshare ESP32-S3-RLCD-4.2
+# (español + sensor mmWave). Se dispara al subir cambios a la rama "claudio"
+# o a mano desde la pestaña Actions.
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - claudio
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: espressif/idf:release-v6.1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Compilar firmware
+        shell: bash
+        run: |
+          source "$IDF_PATH/export.sh"
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          python scripts/build.py waveshare/esp32-s3-rlcd-4.2 --name esp32-s3-rlcd-4.2 --language es-ES
+
+      - name: Subir firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: claudio-rlcd-4.2-${{ github.sha }}
+          path: build/merged-binary.bin
+          if-no-files-found: error

@@ -2,6 +2,7 @@
 #define _BOARD_CONFIG_H_
 
 #include <driver/gpio.h>
+#include <driver/uart.h>
 
 #define ESP32_I2C_HOST      I2C_NUM_0
 #define ESP32_LCD_HOST      SPI3_HOST
@@ -32,6 +33,11 @@
 #define RLCD_MOSI_PIN  GPIO_NUM_12
 #define RLCD_RST_PIN   GPIO_NUM_41
 #define RLCD_TE_PIN    GPIO_NUM_6
+
+// Sensor de presencia HMMD mmWave (UART en los pines libres del conector)
+#define MMWAVE_UART_NUM      UART_NUM_1
+#define MMWAVE_UART_TX_PIN   GPIO_NUM_43
+#define MMWAVE_UART_RX_PIN   GPIO_NUM_44
 
 #define RLCD_WIDTH   400
 #define RLCD_HEIGHT  300
