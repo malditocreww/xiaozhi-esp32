@@ -11,7 +11,7 @@ on:
       - claudio
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -35,3 +35,14 @@ jobs:
           name: claudio-rlcd-4.2-${{ github.sha }}
           path: build/merged-binary.bin
           if-no-files-found: error
+
+      - name: Publicar en Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: claudio-${{ github.run_number }}
+          name: Claudio RLCD-4.2 build ${{ github.run_number }}
+          target_commitish: ${{ github.sha }}
+          files: build/merged-binary.bin
+          body: |
+            Firmware Claudio para Waveshare ESP32-S3-RLCD-4.2 (español + sensor mmWave).
+            Grabar con: python -m esptool --chip esp32s3 -p COM4 -b 921600 write-flash 0x0 merged-binary.bin
